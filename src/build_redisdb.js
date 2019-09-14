@@ -1,4 +1,4 @@
-require('custom-env').env()
+require('custom-env').env('dev')
 
 const redis = require('redis');
 const mockData = require('./mock/stats');
@@ -26,7 +26,7 @@ client.on('connect', function() {
             console.log('Mock ' + i + ' added');
         });
         client.zadd([
-            'avg_temp', val.avgTemp, id
+            'avg_temp:' + val.month, val.avgTemp, id
         ], function(err, res) {
             if (err) throw err;
             console.log('Index ' + i + ' added');
