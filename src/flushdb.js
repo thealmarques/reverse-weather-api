@@ -1,10 +1,18 @@
 require('custom-env').env('dev')
+const mongoose = require('mongoose');
 
-const redis = require('redis');
-
-let client = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
-client.flushall();
-client.flushdb();
-client.quit();
-
-console.log('DB Flushed and deleted');
+mongoose.connect('mongodb://' + process.env.MONGO_DB + '/weather', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}, (err) => {
+    if (err) throw err;
+    console.log('Connection established...');
+    mongoose.connection.db.listCollections().toArray(function (err, names) {
+        names.forEach((model) => {
+            mongoose.connection.db.dropCollection(model, function(err, result) {
+                console.log(model.name + ' deleted');
+            });
+        });
+        mongoose.disconnect();
+    });
+});

@@ -1,9 +1,14 @@
+require('custom-env').env('dev')
+
 const express = require('express');
-const redis = require('redis');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
+let Statistics = require('./model/Statistics');
+let CountryModel = require('./model/Country');
+let _ = require('underscore');
 
 // define the REST API builder
 const app = express();
@@ -20,61 +25,61 @@ app.use(cors());
 // Adding morgan to log HTTP requests
 app.use(morgan('combined'));
 
-let client = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_HOST);
-
-client.on('connect', () => {
-    console.log('Redis connected...');
+mongoose.connect('mongodb://' + process.env.MONGO_DB + '/weather', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}, (err) => {
+    if (err) throw err;
+    console.log('Mongodb connecting...');
 
     // Listen to the server
     app.listen(3001, () => {
         console.log('listening on port 3001...');
     });
-})
+});
 
-app.get('/', async (req, res) => {
+app.get('/countries', async (req, res) => {
     let result = [];
-    let indexes = await getIndexes({
-        month: req.query.month,
-        minTemp: req.query.minTemp,
-        maxTemp: req.query.maxTemp
-    });
-
-    for (let i = 0; i < indexes.length; i++) {
-        let index = indexes[i];
-        let properties = await getIndex(index);
-        result.push(properties);
+    for (let i = parseInt(req.query.minTemp); i <= parseInt(req.query.maxTemp); i++) {
+        let queryRes = await CountryModel.find({
+            minTemp: {
+                $lte: i
+            },
+            maxTemp: {
+                $gte: i
+            },
+            month: req.query.month
+        })
+        if (queryRes.length != 0) {
+            result = _.union(result, queryRes);
+        }
     }
-
     if (result.length != 0) {
         res.status(200);
-        res.send(result);
+        res.send(_.uniq(result, function(res) { 
+            return res.country; 
+        }));
     }
     res.status(404);
     res.send();
 });
 
-function getIndexes(params) {
-    return new Promise((resolve, reject) => {
-        client.zrangebyscore('avg_temp:' + params.month, params.minTemp, params.maxTemp, (err, members) => {
-            if (!err) {
-                resolve (members);
-            }
-            reject(null);
-        });
+app.get('/cities', async (req, res) => {
+    let Model = mongoose.model(req.query.country, Statistics, req.query.country);
+    let queryRes = await Model.find({
+        avgTemp: {
+            $lte: req.query.maxTemp,
+            $gte: req.query.minTemp
+        },
+        country: req.query.country,
+        month: req.query.month
     });
-}
 
-function getIndex(param) {
-    return new Promise((resolve, reject) => {
-        client.hgetall(param, (err, members) => {
-            if (!err) {
-                let item = {};
-                for (i in members) {
-                    item[i] = members[i];
-                 }
-                resolve (item);
-            }
-            reject(null);
-        });
-    });
-}
+    if (queryRes.length != 0) {
+        res.status(200);
+        res.send(queryRes);
+    }
+    
+    res.status(404);
+    res.send();
+});

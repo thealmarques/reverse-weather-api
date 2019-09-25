@@ -11,27 +11,16 @@ const data = [
         precp: 10
     },
     {
-        country: 'Portugal',
-        city: 'Porto',
-        month: 1,
+        country: 'France',
+        city: 'Paris',
+        month: 2,
         latitude: 123.31,
         longitude: 11.11,
         minTemp: 9,
         maxTemp: 12,
         avgTemp: 11,
         precp: 30
-    },
-    {
-        country: 'Portugal',
-        city: 'Braga',
-        month: 1,
-        latitude: 982.31,
-        longitude: 193.11,
-        minTemp: 12,
-        maxTemp: 18,
-        avgTemp: 15,
-        precp: 23
     }
-]
+];
 
 module.exports = data;
