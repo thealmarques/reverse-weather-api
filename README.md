@@ -1,6 +1,6 @@
 # Weather API 
 
-Rever weather search, given a temperature, it will return cities with that matches the search criteria.
+Reverse weather search, given a temperature, it will return cities with that matches the search criteria.
 
 # Technologies used
 
